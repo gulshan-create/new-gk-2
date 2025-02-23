@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Audio Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: linear-gradient(135deg, #4203a9, #90bafc); 
+            overflow: hidden;
+        }
+        .player-container { 
+            width: 300px; 
+            background: rgba(255, 255, 255, 0.15); 
+            border-radius: 25px; 
+            padding: 25px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); 
+            backdrop-filter: blur(5px); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            position: relative; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .player-container:hover { 
+            transform: scale(1.02); 
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4); 
+        }
+
+        /* Hamburger Menu */
+        .menu-btn { 
+            position: absolute; 
+            background-color: #7cdc6b;
+            top: 15px; 
+            left: 15px; 
+            border-radius: 4px;
+            font-size: 1em; 
+            color: #e91010; 
+            cursor: pointer; 
+            transition: transform 0.3s ease; 
+        }
+        .menu-btn:hover { transform: scale(1.2); }
+        .menu { 
+            position: absolute; 
+            top: 50px; 
+            left: 15px; 
+            width: 75px; 
+            background-color: non;
+            background: rgba(228, 200, 106, 0.9); 
+            border-radius: 10px; 
+            box-shadow: 0 5px 20px rgba(248, 6, 6, 0.3); 
+            display: none; 
+            flex-direction: column; 
+            padding: 0px; 
+        }
+        .menu.active { display: flex; }
+        .menu-item { 
+            padding: 10px; 
+            color: #5d05ea; 
+            cursor: pointer; 
+            border-radius: 5px;
+            transition: background 0.3s ease, color 0.3s ease; 
+        }
+        .menu-item:hover { 
+            background: #90bafc; 
+            color: #e62a2a; 
+        }
+
+        /* Circular Album Art */
+        .album-art { 
+            width: 150px; 
+            height: 150px; 
+            margin: 5px auto 25px; 
+            position: relative; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            animation: rotateGlow 10s infinite linear; 
+            transition: transform 0.5s ease-in-out; 
+        }
+        .album-art img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border-radius: 50%; 
+            transition: opacity 0.5s ease; 
+        }
+        .album-art:hover { transform: rotate(360deg) scale(1.1); }
+        @keyframes rotateGlow { 
+            0% { box-shadow: 0 0 20px #ff6b6b, 0 0 30px #4ecdc4; }
+            50% { box-shadow: 0 0 20px #ffe66d, 0 0 30px #95e1d3; }
+            100% { box-shadow: 0 0 20px #ff6b6b, 0 0 30px #4ecdc4; }
+        }
+
+        .track-info { 
+            text-align: center; 
+            color: #fff; 
+            margin-bottom: 25px; 
+            opacity: 0; 
+            animation: fadeIn 0.8s ease forwards; 
+        }
+        .track-title { font-size: 1.4em; margin-bottom: 8px; }
+        .track-artist { font-size: 1em; opacity: 0.8; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .progress-bar { 
+            width: 100%; 
+            height: 6px; 
+            background: rgba(255, 255, 255, 0.3); 
+            border-radius: 3px; 
+            cursor: pointer; 
+            position: relative; 
+            margin-bottom: 20px; 
+            transition: background 0.3s ease; 
+        }
+        .progress-bar:hover { background: rgba(255, 255, 255, 0.5); }
+        .progress { 
+            height: 100%; 
+            width: 0%; 
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4); 
+            border-radius: 3px; 
+            transition: width 0.1s linear; 
+        }
+        .time { 
+            display: flex; 
+            justify-content: space-between; 
+            color: #fff; 
+            font-size: 0.9em; 
+            margin-top: 5px; 
+        }
+
+        .controls { 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px; 
+            margin-bottom: 25px; 
+        }
+        .control-btn { 
+            background: none; 
+            border: none; 
+            color: #fff; 
+            font-size: 2em; 
+            cursor: pointer; 
+            transition: transform 0.3s ease, color 0.3s ease; 
+        }
+        .control-btn:hover { 
+            transform: scale(1.2); 
+            color: #ffe66d; 
+        }
+
+        .volume-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            color: #fff; 
+            justify-content: center; 
+        }
+        .volume-slider { 
+            width: 120px; 
+            -webkit-appearance: none; 
+            height: 6px; 
+            background: rgba(255, 255, 255, 0.3); 
+            border-radius: 3px; 
+            transition: background 0.3s ease; 
+        }
+        .volume-slider:hover { background: rgba(255, 255, 255, 0.5); }
+        .volume-slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            background: #fff; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); 
+        }
+        .error { 
+            color: #ff6b6b; 
+            text-align: center; 
+            margin-top: 15px; 
+            font-size: 0.9em; 
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <button class="menu-btn" id="menu-btn">☰</button>
+        <div class="menu" id="menu">
+            <!-- Family members will be added dynamically -->
+        </div>
+        <div class="album-art">
+            <img src="alone gk.jpg" alt="gk">
+        </div>
+        <div class="track-info">
+            <div class="track-title">Sample Track</div>
+            <div class="track-artist">Artist Name</div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+        <div class="time">
+            <span class="current-time">0:00</span>
+            <span class="duration">0:00</span>
+        </div>
+        <div class="controls">
+            <button class="control-btn" id="prev">⏮</button>
+            <button class="control-btn" id="play">▶️</button>
+            <button class="control-btn" id="next">⏭</button>
+        </div>
+        <div class="volume-container">
+            <span>🔊</span>
+            <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1">
+        </div>
+        <div class="error" id="error-msg"></div>
+    </div>
+
+    <script>
+        const audio = new Audio();
+        const playBtn = document.getElementById('play');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const progressBar = document.querySelector('.progress-bar');
+        const progress = document.querySelector('.progress');
+        const currentTimeEl = document.querySelector('.current-time');
+        const durationEl = document.querySelector('.duration');
+        const volumeSlider = document.querySelector('.volume-slider');
+        const trackTitle = document.querySelector('.track-title');
+        const trackArtist = document.querySelector('.track-artist');
+        const albumArt = document.querySelector('.album-art img');
+        const errorMsg = document.getElementById('error-msg');
+        const menuBtn = document.getElementById('menu-btn');
+        const menu = document.getElementById('menu');
+
+        // Family playlists with folders
+        const familyPlaylists = {
+            "anjani": [
+                { title: "anjani's Song 1", artist: "anjani1", src: "ya.mp3", art: "alone gk.jpg" },
+                { title: "vennelave's Song 2", artist: "gk 2", src: "vennelave.mp3", art: "download.jpg" }
+            ],
+            "Anjani": [
+                { title: "anjani's Song 1", artist: "Artist 3", src: "anjanisong1.mp3", art: "Rahul/album1.jpg" },
+                { title: "Rahul's Song 2", artist: "Artist 4", src: "Rahul/song2.mp3", art: "Rahul/album2.jpg" }
+            ],
+            "Online": [
+                { title: "Track 1", artist: "Artist 1", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", art: "https://via.placeholder.com/300/FF6B6B/FFFFFF" },
+                { title: "Track 2", artist: "Artist 2", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", art: "https://via.placeholder.com/300/4ECDC4/FFFFFF" }
+            ]
+            // Add more family members here
+        };
+
+        let currentPlaylist = familyPlaylists["Online"]; // Default playlist
+        let currentTrack = 0;
+        let isPlaying = false;
+
+        // Render menu
+        function renderMenu() {
+            menu.innerHTML = '';
+            Object.keys(familyPlaylists).forEach(member => {
+                const menuItem = document.createElement('div');
+                menuItem.classList.add('menu-item');
+                menuItem.textContent = member;
+                menuItem.addEventListener('click', () => {
+                    currentPlaylist = familyPlaylists[member];
+                    currentTrack = 0;
+                    loadTrack(currentTrack);
+                    if (isPlaying) audio.play();
+                    menu.classList.remove('active');
+                });
+                menu.appendChild(menuItem);
+            });
+        }
+
+        function loadTrack(index) {
+            audio.src = currentPlaylist[index].src;
+            trackTitle.textContent = currentPlaylist[index].title;
+            trackArtist.textContent = currentPlaylist[index].artist;
+            albumArt.src = currentPlaylist[index].art || "https://via.placeholder.com/300";
+            audio.load();
+            errorMsg.textContent = '';
+            albumArt.style.opacity = 0;
+            setTimeout(() => { albumArt.style.opacity = 1; }, 100);
+        }
+
+        function playPause() {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.textContent = '▶️';
+                isPlaying = false;
+            } else {
+                audio.play()
+                    .then(() => {
+                        playBtn.textContent = '⏸';
+                        isPlaying = true;
+                    })
+                    .catch(error => {
+                        errorMsg.textContent = 'Error playing audio: ' + error.message;
+                    });
+            }
+        }
+
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progress.style.width = `${percent}%`;
+                const currentMinutes = Math.floor(audio.currentTime / 60);
+                const currentSeconds = Math.floor(audio.currentTime % 60);
+                const durationMinutes = Math.floor(audio.duration / 60);
+                const durationSeconds = Math.floor(audio.duration % 60);
+                currentTimeEl.textContent = `${currentMinutes}:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`;
+                durationEl.textContent = `${durationMinutes}:${durationSeconds < 10 ? '0' : ''}${durationSeconds}`;
+            }
+        }
+
+        function setProgress(e) {
+            const width = progressBar.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audio.duration;
+            audio.currentTime = (clickX / width) * duration;
+        }
+
+        function nextTrack() {
+            currentTrack = (currentTrack + 1) % currentPlaylist.length;
+            loadTrack(currentTrack);
+            if (isPlaying) audio.play().catch(error => {
+                errorMsg.textContent = 'Error playing next track: ' + error.message;
+            });
+        }
+
+        function prevTrack() {
+            currentTrack = (currentTrack - 1 + currentPlaylist.length) % currentPlaylist.length;
+            loadTrack(currentTrack);
+            if (isPlaying) audio.play().catch(error => {
+                errorMsg.textContent = 'Error playing previous track: ' + error.message;
+            });
+        }
+
+        // Event Listeners
+        playBtn.addEventListener('click', playPause);
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        audio.addEventListener('timeupdate', updateProgress);
+        progressBar.addEventListener('click', setProgress);
+        volumeSlider.addEventListener('input', (e) => {
+            audio.volume = e.target.value;
+        });
+        audio.addEventListener('ended', nextTrack);
+
+        menuBtn.addEventListener('click', () => {
+            menu.classList.toggle('active');
+        });
+
+        // Initial setup
+        renderMenu();
+        loadTrack(currentTrack);
+    </script>
+</body>
+</html>
